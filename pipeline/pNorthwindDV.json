@@ -17,7 +17,13 @@
 				"typeProperties": {
 					"dataflow": {
 						"referenceName": "dfFillHubs",
-						"type": "DataFlowReference"
+						"type": "DataFlowReference",
+						"parameters": {
+							"LoadDate": {
+								"value": "$LoadDate",
+								"type": "Expression"
+							}
+						}
 					},
 					"compute": {
 						"coreCount": 8,
