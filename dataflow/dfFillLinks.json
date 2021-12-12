@@ -6,7 +6,7 @@
 			"sources": [],
 			"sinks": [],
 			"transformations": [],
-			"script": ""
+			"script": "parameters{\n\tLoadDate as timestamp (currentUTC(\"Berlin\")),\n\tRecordSource as string (\"Northwind\")\n}"
 		}
 	}
 }

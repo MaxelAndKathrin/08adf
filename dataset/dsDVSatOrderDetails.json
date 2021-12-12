@@ -2,7 +2,7 @@
 	"name": "dsDVSatOrderDetails",
 	"properties": {
 		"linkedServiceName": {
-			"referenceName": "IsNorthwind",
+			"referenceName": "IsDV",
 			"type": "LinkedServiceReference"
 		},
 		"annotations": [],
@@ -37,7 +37,7 @@
 		],
 		"typeProperties": {
 			"schema": "dbo",
-			"table": "Order Details"
+			"table": "Sat_Order_Details"
 		}
 	}
 }

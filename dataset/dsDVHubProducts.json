@@ -2,7 +2,7 @@
 	"name": "dsDVHubProducts",
 	"properties": {
 		"linkedServiceName": {
-			"referenceName": "IsNorthwind",
+			"referenceName": "IsDV",
 			"type": "LinkedServiceReference"
 		},
 		"annotations": [],
@@ -59,7 +59,7 @@
 		],
 		"typeProperties": {
 			"schema": "dbo",
-			"table": "Products"
+			"table": "Hub_Products"
 		}
 	}
 }

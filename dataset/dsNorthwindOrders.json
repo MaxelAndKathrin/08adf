@@ -1,8 +1,8 @@
 {
-	"name": "dsDVHubOrders",
+	"name": "dsNorthwindOrders",
 	"properties": {
 		"linkedServiceName": {
-			"referenceName": "IsDV",
+			"referenceName": "IsNorthwind",
 			"type": "LinkedServiceReference"
 		},
 		"annotations": [],
@@ -78,7 +78,7 @@
 		],
 		"typeProperties": {
 			"schema": "dbo",
-			"table": "Hub_Orders"
+			"table": "Orders"
 		}
 	}
 }
