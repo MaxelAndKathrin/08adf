@@ -79,7 +79,10 @@
 				"typeProperties": {
 					"dataflow": {
 						"referenceName": "dfFillSatellites",
-						"type": "DataFlowReference"
+						"type": "DataFlowReference",
+						"parameters": {
+							"LoadDate": "currentUTC(\"Berlin\")"
+						}
 					},
 					"compute": {
 						"coreCount": 8,
