@@ -3,10 +3,18 @@
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {
-			"sources": [],
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "dsNorthwindProducts",
+						"type": "DatasetReference"
+					},
+					"name": "NorthwindProducts"
+				}
+			],
 			"sinks": [],
 			"transformations": [],
-			"script": ""
+			"script": "parameters{\n\tLoadDate as timestamp (currentUTC(\"Berlin\")),\n\tRecordSource as string (\"Northwind\")\n}\nsource(output(\n\t\tProductID as integer,\n\t\tProductName as string,\n\t\tSupplierID as integer,\n\t\tCategoryID as integer,\n\t\tQuantityPerUnit as string,\n\t\tUnitPrice as decimal(19,4),\n\t\tUnitsInStock as integer,\n\t\tUnitsOnOrder as integer,\n\t\tReorderLevel as integer,\n\t\tDiscontinued as boolean\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> NorthwindProducts"
 		}
 	}
 }
