@@ -3,10 +3,32 @@
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {
-			"sources": [],
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "dsNorthwindProducts",
+						"type": "DatasetReference"
+					},
+					"name": "NortwhindProducts"
+				},
+				{
+					"dataset": {
+						"referenceName": "dsDVHubProducts",
+						"type": "DatasetReference"
+					},
+					"name": "DVHubProducts"
+				}
+			],
 			"sinks": [],
-			"transformations": [],
-			"script": "parameters{\n\tLoadDate as timestamp (currentUTC(\"Berlin\")),\n\tRecordSource as string (\"Northwind\")\n}"
+			"transformations": [
+				{
+					"name": "JoinProducts"
+				},
+				{
+					"name": "SelectSatProduct"
+				}
+			],
+			"script": "parameters{\n\tLoadDate as timestamp (currentUTC(\"Berlin\")),\n\tRecordSource as string (\"Northwind\")\n}\nsource(output(\n\t\tProductID as integer,\n\t\tProductName as string,\n\t\tSupplierID as integer,\n\t\tCategoryID as integer,\n\t\tQuantityPerUnit as string,\n\t\tUnitPrice as decimal(19,4),\n\t\tUnitsInStock as integer,\n\t\tUnitsOnOrder as integer,\n\t\tReorderLevel as integer,\n\t\tDiscontinued as boolean\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> NortwhindProducts\nsource(output(\n\t\tProduct_SID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string,\n\t\tProduct_ID as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> DVHubProducts\nNortwhindProducts, DVHubProducts join(ProductID == Product_ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinProducts\nJoinProducts select(mapColumn(\n\t\tProductID,\n\t\tProductName,\n\t\tSupplierID,\n\t\tCategoryID,\n\t\tQuantityPerUnit,\n\t\tUnitPrice,\n\t\tUnitsInStock,\n\t\tUnitsOnOrder,\n\t\tReorderLevel,\n\t\tDiscontinued,\n\t\tProduct_SID,\n\t\tLoadDate,\n\t\tRecordSource,\n\t\tProduct_ID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectSatProduct"
 		}
 	}
 }

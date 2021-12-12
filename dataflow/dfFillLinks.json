@@ -3,10 +3,56 @@
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {
-			"sources": [],
-			"sinks": [],
-			"transformations": [],
-			"script": "parameters{\n\tLoadDate as timestamp (currentUTC(\"Berlin\")),\n\tRecordSource as string (\"Northwind\")\n}"
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "dsDVHubProducts",
+						"type": "DatasetReference"
+					},
+					"name": "HubProducts"
+				},
+				{
+					"dataset": {
+						"referenceName": "dsNorthwindOrderDetails",
+						"type": "DatasetReference"
+					},
+					"name": "OrderDetails"
+				},
+				{
+					"dataset": {
+						"referenceName": "dsDVHubOrders",
+						"type": "DatasetReference"
+					},
+					"name": "HubOrders"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "dsDVLinkOrderDetails",
+						"type": "DatasetReference"
+					},
+					"name": "DVLinkOrderDetails"
+				}
+			],
+			"transformations": [
+				{
+					"name": "JoinHubProductsOrderDetails"
+				},
+				{
+					"name": "JoinHubOrdersOrderDetails"
+				},
+				{
+					"name": "ReduceJoin2"
+				},
+				{
+					"name": "Verbinden1"
+				},
+				{
+					"name": "AddLoadDateRecordSource"
+				}
+			],
+			"script": "parameters{\n\tLoadDate as timestamp (currentUTC(\"Berlin\")),\n\tRecordSource as string (\"Northwind\")\n}\nsource(output(\n\t\tProduct_SID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string,\n\t\tProduct_ID as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> HubProducts\nsource(output(\n\t\tOrderID as integer,\n\t\tProductID as integer,\n\t\tUnitPrice as decimal(19,4),\n\t\tQuantity as integer,\n\t\tDiscount as float\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> OrderDetails\nsource(output(\n\t\tOrder_SID as integer,\n\t\tOrder_ID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> HubOrders\nHubProducts, OrderDetails join(Product_ID == ProductID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinHubProductsOrderDetails\nHubOrders, OrderDetails join(Order_ID == OrderID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinHubOrdersOrderDetails\nJoinHubOrdersOrderDetails select(mapColumn(\n\t\tOrder_SID,\n\t\tOrder_ID,\n\t\tLoadDate,\n\t\tRecordSource,\n\t\tOrderID,\n\t\tProductID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> ReduceJoin2\nJoinHubProductsOrderDetails, ReduceJoin2 join(OrderDetails@ProductID == ReduceJoin2@ProductID\n\t&& OrderDetails@OrderID == ReduceJoin2@OrderID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Verbinden1\nVerbinden1 derive(LoadDate = $LoadDate,\n\t\tRecordSource = $RecordSource) ~> AddLoadDateRecordSource\nAddLoadDateRecordSource sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tLink_Order_Details_SID as integer,\n\t\tProduct_SID as integer,\n\t\tOrder_SID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tProduct_SID,\n\t\tOrder_SID,\n\t\tLoadDate,\n\t\tRecordSource\n\t)) ~> DVLinkOrderDetails"
 		}
 	}
 }
