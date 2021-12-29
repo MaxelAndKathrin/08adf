@@ -53,14 +53,14 @@
 						"referenceName": "dsDVSatProducts",
 						"type": "DatasetReference"
 					},
-					"name": "DVSatProducts"
+					"name": "SatProducts"
 				},
 				{
 					"dataset": {
 						"referenceName": "dsDVSatOrderDetails",
 						"type": "DatasetReference"
 					},
-					"name": "DVSatelliteOrderDetails"
+					"name": "SatOrderDetails"
 				}
 			],
 			"transformations": [
@@ -68,28 +68,28 @@
 					"name": "JoinProducts"
 				},
 				{
-					"name": "SelectSatProduct"
+					"name": "SelectSatProductsAttributes"
 				},
 				{
-					"name": "JoinHubOrdersOnOrderDetails"
+					"name": "AbgeleiteteSpalte1"
 				},
 				{
-					"name": "JoinHubProductsOnOrderDetails"
+					"name": "Verbinden1"
 				},
 				{
-					"name": "SelectAfterJon"
+					"name": "Verbinden2"
 				},
 				{
-					"name": "AlmostFinalJoin"
+					"name": "Verbinden3"
 				},
 				{
-					"name": "FinalJoin"
+					"name": "SelectOrderDetailsAttributes"
 				},
 				{
-					"name": "AddRecordSourceLoadDate"
+					"name": "AbgeleiteteSpalte2"
 				}
 			],
-			"script": "parameters{\n\tLoadDate as timestamp (currentUTC(\"Berlin\"))\n}\nsource(output(\n\t\tProductID as integer,\n\t\tProductName as string,\n\t\tSupplierID as integer,\n\t\tCategoryID as integer,\n\t\tQuantityPerUnit as string,\n\t\tUnitPrice as decimal(19,4),\n\t\tUnitsInStock as integer,\n\t\tUnitsOnOrder as integer,\n\t\tReorderLevel as integer,\n\t\tDiscontinued as boolean\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> NortwhindProducts\nsource(output(\n\t\tProduct_SID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string,\n\t\tProduct_ID as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> DVHubProducts\nsource(output(\n\t\tOrder_SID as integer,\n\t\tOrder_ID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> HubOrders\nsource(output(\n\t\tOrderID as integer,\n\t\tProductID as integer,\n\t\tUnitPrice as decimal(19,4),\n\t\tQuantity as integer,\n\t\tDiscount as float\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> OrderDetails\nsource(output(\n\t\tProduct_SID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string,\n\t\tProduct_ID as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> HubProduct\nsource(output(\n\t\tLink_Order_Details_SID as integer,\n\t\tProduct_SID as integer,\n\t\tOrder_SID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> LinkOrderDetails\nNortwhindProducts, DVHubProducts join(ProductID == Product_ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinProducts\nJoinProducts select(mapColumn(\n\t\tProductName,\n\t\tProduct_SID,\n\t\tLoadDate,\n\t\tRecordSource\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectSatProduct\nHubOrders, OrderDetails join(Order_ID == OrderID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinHubOrdersOnOrderDetails\nHubProduct, OrderDetails join(Product_ID == ProductID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinHubProductsOnOrderDetails\nJoinHubOrdersOnOrderDetails select(mapColumn(\n\t\tOrder_SID,\n\t\tOrder_ID,\n\t\tLoadDate,\n\t\tRecordSource,\n\t\tOrderID,\n\t\tProductID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectAfterJon\nSelectAfterJon, JoinHubProductsOnOrderDetails join(SelectAfterJon@ProductID == Product_ID\n\t&& Order_ID == OrderDetails@OrderID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> AlmostFinalJoin\nAlmostFinalJoin, LinkOrderDetails join(HubProduct@Product_SID == LinkOrderDetails@Product_SID\n\t&& SelectAfterJon@Order_SID == LinkOrderDetails@Order_SID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> FinalJoin\nFinalJoin derive(RecordSource = \"Northwind\",\n\t\tLoadDate = $LoadDate) ~> AddRecordSourceLoadDate\nSelectSatProduct sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tProduct_SID as integer,\n\t\tProductName as string,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tProduct_SID,\n\t\tProductName,\n\t\tLoadDate,\n\t\tRecordSource\n\t)) ~> DVSatProducts\nAddRecordSourceLoadDate sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tLink_Order_Details_SID as integer,\n\t\tQuantity as integer,\n\t\tUnitPrice as decimal(5,2),\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tLink_Order_Details_SID,\n\t\tQuantity,\n\t\tUnitPrice,\n\t\tLoadDate,\n\t\tRecordSource\n\t)) ~> DVSatelliteOrderDetails"
+			"script": "parameters{\n\tLoadDate as timestamp (currentUTC(\"Berlin\"))\n}\nsource(output(\n\t\tProductID as integer,\n\t\tProductName as string,\n\t\tSupplierID as integer,\n\t\tCategoryID as integer,\n\t\tQuantityPerUnit as string,\n\t\tUnitPrice as decimal(19,4),\n\t\tUnitsInStock as integer,\n\t\tUnitsOnOrder as integer,\n\t\tReorderLevel as integer,\n\t\tDiscontinued as boolean\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> NortwhindProducts\nsource(output(\n\t\tProduct_SID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string,\n\t\tProduct_ID as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> DVHubProducts\nsource(output(\n\t\tOrder_SID as integer,\n\t\tOrder_ID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> HubOrders\nsource(output(\n\t\tOrderID as integer,\n\t\tProductID as integer,\n\t\tUnitPrice as decimal(19,4),\n\t\tQuantity as integer,\n\t\tDiscount as float\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> OrderDetails\nsource(output(\n\t\tProduct_SID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string,\n\t\tProduct_ID as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> HubProduct\nsource(output(\n\t\tLink_Order_Details_SID as integer,\n\t\tProduct_SID as integer,\n\t\tOrder_SID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> LinkOrderDetails\nNortwhindProducts, DVHubProducts join(ProductID == Product_ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinProducts\nJoinProducts select(mapColumn(\n\t\tProductName,\n\t\tProduct_SID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectSatProductsAttributes\nSelectSatProductsAttributes derive(LoadDate = $LoadDate,\n\t\tRecordSource = \"Northwind\") ~> AbgeleiteteSpalte1\nOrderDetails, HubOrders join(OrderID == Order_ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Verbinden1\nVerbinden1, DVHubProducts join(ProductID == Product_ID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Verbinden2\nVerbinden2, LinkOrderDetails join(HubOrders@Order_SID == LinkOrderDetails@Order_SID\n\t&& DVHubProducts@Product_SID == LinkOrderDetails@Product_SID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Verbinden3\nVerbinden3 select(mapColumn(\n\t\tUnitPrice,\n\t\tQuantity,\n\t\tLink_Order_Details_SID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectOrderDetailsAttributes\nSelectOrderDetailsAttributes derive(LoadDate = $LoadDate,\n\t\tRecordSource = \"Northwind\") ~> AbgeleiteteSpalte2\nAbgeleiteteSpalte1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tProduct_SID as integer,\n\t\tProductName as string,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tProduct_SID,\n\t\tProductName,\n\t\tLoadDate,\n\t\tRecordSource\n\t)) ~> SatProducts\nAbgeleiteteSpalte2 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tLink_Order_Details_SID as integer,\n\t\tQuantity as integer,\n\t\tUnitPrice as decimal(5,2),\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tLink_Order_Details_SID,\n\t\tQuantity,\n\t\tUnitPrice,\n\t\tLoadDate,\n\t\tRecordSource\n\t)) ~> SatOrderDetails"
 		}
 	}
 }
