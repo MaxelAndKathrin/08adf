@@ -6,7 +6,7 @@
 		"type": "AzureSqlDatabase",
 		"typeProperties": {
 			"connectionString": "integrated security=False;encrypt=True;connection timeout=30;data source=ssqlbi08.database.windows.net;initial catalog=BI08Star;user id=bi08",
-			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIkRBVEFGQUNUT1JZQEJCQUI4RUNDLTczNTktNDc2OC1CMTA5LTA1RkVDRkQ4MjMyQ18xMTlkNzZmZS03ZmMyLTQxOWQtOGMwNy00YmRlODIxZGRjZTUiDQp9"
+			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIkRBVEFGQUNUT1JZQEJCQUI4RUNDLTczNTktNDc2OC1CMTA5LTA1RkVDRkQ4MjMyQ180NzJlNmFlZS04MzIwLTQyYTMtODk2Yi04NTNjN2JmOGYxYzIiDQp9"
 		}
 	}
 }
