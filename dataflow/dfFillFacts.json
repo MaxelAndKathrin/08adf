@@ -1,0 +1,55 @@
+{
+	"name": "dfFillFacts",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "dsDVHubOrders",
+						"type": "DatasetReference"
+					},
+					"name": "DVHubOrders"
+				},
+				{
+					"dataset": {
+						"referenceName": "dsDVLinkOrderDetails",
+						"type": "DatasetReference"
+					},
+					"name": "DVLinkOrderDetails"
+				},
+				{
+					"dataset": {
+						"referenceName": "dsDVSatOrderDetails",
+						"type": "DatasetReference"
+					},
+					"name": "DVSatOrderDetails"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "dsStarFactOrders",
+						"type": "DatasetReference"
+					},
+					"name": "StarFactOrders"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Verbinden1"
+				},
+				{
+					"name": "Verbinden2"
+				},
+				{
+					"name": "SelectAttr"
+				},
+				{
+					"name": "AddCols"
+				}
+			],
+			"script": "parameters{\n\tLoadDate as timestamp (currentUTC(\"Berlin\"))\n}\nsource(output(\n\t\tOrder_SID as integer,\n\t\tOrder_ID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> DVHubOrders\nsource(output(\n\t\tLink_Order_Details_SID as integer,\n\t\tProduct_SID as integer,\n\t\tOrder_SID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> DVLinkOrderDetails\nsource(output(\n\t\tLink_Order_Details_SID as integer,\n\t\tQuantity as integer,\n\t\tUnitPrice as decimal(5,2),\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> DVSatOrderDetails\nDVHubOrders, DVLinkOrderDetails join(DVHubOrders@Order_SID == DVLinkOrderDetails@Order_SID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Verbinden1\nVerbinden1, DVSatOrderDetails join(DVLinkOrderDetails@Link_Order_Details_SID == DVSatOrderDetails@Link_Order_Details_SID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> Verbinden2\nVerbinden2 select(mapColumn(\n\t\tOrder_ID,\n\t\tProduct_SID,\n\t\tQuantity,\n\t\tUnitPrice\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectAttr\nSelectAttr derive(LoadDate = $LoadDate,\n\t\tRecordSource = \"DVNorthwind\") ~> AddCols\nAddCols sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tOrder_ID as integer,\n\t\tProduct_SID as integer,\n\t\tLoadDate as timestamp,\n\t\tRecordSource as string,\n\t\tQuantity as integer,\n\t\tUnitPrice as decimal(5,2)\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tOrder_ID,\n\t\tProduct_SID,\n\t\tLoadDate,\n\t\tRecordSource,\n\t\tQuantity,\n\t\tUnitPrice\n\t)) ~> StarFactOrders"
+		}
+	}
+}
