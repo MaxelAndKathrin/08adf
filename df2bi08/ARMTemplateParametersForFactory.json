@@ -1,0 +1,21 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "df2bi08"
+		},
+		"IsBI08Northwind_connectionString": {
+			"value": ""
+		},
+		"IsDV_connectionString": {
+			"value": ""
+		},
+		"IsNorthwind_connectionString": {
+			"value": ""
+		},
+		"IsStar_connectionString": {
+			"value": ""
+		}
+	}
+}
